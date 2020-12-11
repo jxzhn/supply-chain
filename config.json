@@ -1,0 +1,35 @@
+{
+    "encryptType": "ECDSA",
+    "accounts": {
+        "bob": {
+            "type": "pem",
+            "value": "./accounts/bob.pem"
+        }
+    },
+    "timeout": 60000,
+    "groupID": 1,
+    "chainID": 1,
+    "nodes": [
+        {
+            "ip": "127.0.0.1",
+            "port": "20200"
+        },
+        {
+            "ip": "127.0.0.1",
+            "port": "20201"
+        },
+        {
+            "ip": "127.0.0.1",
+            "port": "20202"
+        },
+        {
+            "ip": "127.0.0.1",
+            "port": "20203"
+        }
+    ],
+    "authentication": {
+        "key": "./authentications/sdk.key",
+        "cert": "./authentications/sdk.crt",
+        "ca": "./authentications/ca.crt"
+    }
+}
