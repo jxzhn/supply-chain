@@ -37,6 +37,8 @@ async function main() {
 
     console.log('Done.');
 
+    let account = 'ca'; // 默认使用CA账户
+
     while (1) {
         let instruction = (await input('> ')).split(/\s+/);
 
@@ -47,12 +49,27 @@ async function main() {
             break;
         }
 
+        if (method == '.switch') {
+            if (parameters.length != 1) {
+                console.log(`it seems that parameters are not correct. parameters: ${parameters}`);
+                continue;
+            }
+            account = parameters[0];
+            console.log(`ok. set account to '${account}'`);
+            continue;
+        }
+
+        if (method == '.who') {
+            console.log(`current account '${account}'`);
+            continue;
+        }
+
         if (!contract[method]) {
             console.log(`undefined method '${method}'`);
             continue;
         }
         try {
-            // contract.$by('bob');
+            contract.$by(account);
             let res = await contract[method](...parameters);
             console.log(res);
         } catch(err) {

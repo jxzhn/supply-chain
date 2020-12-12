@@ -22,11 +22,12 @@ async function input(query) {
 async function main() {
     let compServ = new CompileService(config);
 
-    let name = await input('contract name: ');
+    let name = await input('Which contract are you gonna compile? ');
 
     console.log('Compiling ...');
     let contractClass = compServ.compile(`contracts/${name}.sol`);
 
+    console.log('Compilation finished.');
     fs.writeFile(`compiled/${name}.json`, JSON.stringify(contractClass), (err) => {
         if (err) {
             console.log('Failed to wirte compiled file.');

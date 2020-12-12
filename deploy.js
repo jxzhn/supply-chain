@@ -21,24 +21,32 @@ async function input(query) {
 }
 
 async function main() {
-    let name = await input('contract name: ');
+    let name = await input('Which contract are you gonna deploy? ');
 
     console.log('Loading contract from compiled file ...');
     let compiled = JSON.parse(fs.readFileSync(`compiled/${name}.json`))
 
-    console.log(`Trying to deploy contract ${name} ...`);
-    // 实际上还应该指定who参数来明确不同account的职能，先不管
-    let res = await web3j.deploy(compiled.abi, compiled.bin, []); // 默认构造函数没有参数
-    console.log(res);
+    let account = await input('Which account are you gonna use? ');
+    let parameters = (await input('Parameters of contructor (split by space): ')).split(
+        /\s+/).filter(item => Boolean(item)); // 去除空串
 
-    fs.writeFile(`deployed/${name}.json`, JSON.stringify(res), (err) => {
-        if (err) {
-            console.log('Failed to write deployed file.');
-            console.log(err);
-        } else {
-            console.log('Deployed file saved.');
-        }
-    });
+    console.log(`Trying to deploy contract ${name} ...`);
+    try {
+        let res = await web3j.deploy(compiled.abi, compiled.bin, parameters, account);
+        console.log(res);
+    
+        fs.writeFile(`deployed/${name}.json`, JSON.stringify(res), (err) => {
+            if (err) {
+                console.log('Contract deployed, but failed to write deployed file.');
+                console.log(err);
+            } else {
+                console.log('Deployed file saved.');
+            }
+        });
+    } catch(err) {
+        console.log('Failed.');
+        console.log(err);
+    }
 }
 
 main();
