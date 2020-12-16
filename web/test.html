@@ -1,0 +1,127 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+<meta charset="utf-8">
+<title>Supply Chain Test Page</title>
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+<style>
+    /* 测试页面要什么自行车CSS */
+</style>
+<div id='app'>
+    <div>
+        <h1>Supply Chain Test Page</h1>
+        <p class='hello'>
+            This is a test page. <br />
+            Let's say the word —— Hello, world!<br />
+            Seems a little stupid though.
+        </p>
+    </div>
+    <div class='info'>
+        <h2>Supply Chain Interface Test</h2>
+        <div v-for='account in accounts' class='account'>
+            <h3 class='account-name'>{{account.name}}</h3>
+            <div class='account-info'>
+                <p>Amount: {{account.amount}}</p>
+                <p>Debt: {{account.debt}}</p>
+                <table border="1" class='account-info-table' v-show='account.debtList.length'>
+                    <tr>
+                        <td>from</td>
+                        <td>to</td>
+                        <td>amount</td>
+                    </tr>
+                    <tr v-for='item in account.debtList'>
+                      <td>{{item.from}}</td>
+                      <td>{{item.to}}</td>
+                      <td>{{item.amount}}</td>
+                    </tr>
+                </table>
+                <p>Receipt Amount: {{account.receiptAmount}}</p>
+                <table border="1" class='account-info-table' v-show='account.receiptList.length'>
+                    <tr>
+                        <td>from</td>
+                        <td>to</td>
+                        <td>amount</td>
+                    </tr>
+                    <tr v-for='item in account.receiptList'>
+                      <td>{{item.from}}</td>
+                      <td>{{item.to}}</td>
+                      <td>{{item.amount}}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    async function contractMethod(account, method, parameters) {
+        try {
+            let res = await axios.post('/contractMethod', {
+                account: account,
+                method: method,
+                parameters: parameters,
+            });
+            if (res.data && res.data.ok) {
+                return res.data.data;
+            } else {
+                console.log(JSON.stringify(res.data? res.data.msg: res));
+            }
+        } catch (err) {
+            console.log(`error occurred when calling contract method ${method} with ${parameters} by ${account}.`);
+            console.log(err);
+        }
+    }
+    async function getReceiptsDetail(account, indice) {
+        let receiptList = [];
+        for (let i of indice) {
+            let res = await contractMethod(account, 'getReceiptDetail', [i]);
+            receiptList.push(res[0]);
+        }
+        return receiptList;
+    }
+    var appVue = new Vue({
+        el: '#app',
+        data: {
+            accounts: [],
+        },
+        async mounted() {
+            for (let name of ['car', 'bank', 'tyre', 'hub']) {
+                let account = {name: name};
+                // 查询余额
+                try {
+                    let [status, amount] = await contractMethod(name, 'getAmount', []);
+                    account.amount = amount;
+                } catch (err) {
+                    console.log(err);
+                }
+                // 查询debt
+                try {
+                    let [debt, indice] = await contractMethod(name, 'getDebts', []);
+                    account.debt = debt;
+                    account.debtList = await getReceiptsDetail(name, indice);
+                } catch (err) {
+                    console.log(err);
+                }
+                // 查询receipt amount
+                try {
+                    let [receiptAmount, indice] = await contractMethod(name, 'getReceipts', []);
+                    account.receiptAmount = receiptAmount;
+                    account.receiptList = await getReceiptsDetail(name, indice);
+                } catch (err) {
+                    console.log(err);
+                }
+                this.accounts.push(account);
+            }
+        },
+        methods: {
+
+        }
+    })
+</script>
+</body>
+
+</html>

@@ -1,4 +1,5 @@
 pragma solidity >=0.4.24 <0.6.11;
+pragma experimental ABIEncoderV2; // 返回结构体
 
 contract SupplyChain {
 
@@ -76,9 +77,15 @@ contract SupplyChain {
     }
     
     // 功能二：实现应收账款的转让上链
-    // 返回值：0表示成功，-1表示可转让账单金额不足
+    // 返回值：0表示成功，-1表示公司未注册，
+    //        -2表示可转让账单金额不足
     function transferReceipt(address to, uint amount) public returns(int) {
         require(msg.sender != to, "You can not transfer receipt to yourself.");
+
+        Company storage company = companies[msg.sender]; // 引用
+        if (!company.registered) {
+            return -1;
+        }
 
         uint count = 0; // 统计可转让金额
 
@@ -94,7 +101,7 @@ contract SupplyChain {
         }
 
         if (count < amount) {
-            return -1;
+            return -2;
         }
 
         for (uint i = 0; i < receipts.length; ++i) {
@@ -102,11 +109,13 @@ contract SupplyChain {
                 continue;
             }
 
-            if (amount > receipts[i].amount) { // 额度还不够，直接把to改了就行了
+            if (amount >= receipts[i].amount) { // 这张账单需要全部使用，直接把to改了就行了
                 receipts[i].to = to;
                 amount -= receipts[i].amount;
+
+                if (amount == 0) break;
             
-            } else { // 减去对应金额，然后创建一个新账单
+            } else { // 只需使用账单的一部分就能抵扣完毕，减去对应金额，然后创建一个新账单
                 receipts[i].amount -= amount;
                 
                 receipts.push(Receipt({
@@ -123,23 +132,28 @@ contract SupplyChain {
     }
 
     // 功能三：利用应收账款向银行融资上链
-    // 返回值：0表示成功，-1表示to参数不是金融机构，
-    //        -2表示金融机构账户额度不足，
-    //        -3表示请求融资的机构账单额度不足
+    // 返回值：0表示成功，-1表示公司未注册，
+    //        -2表示to参数对应公司未注册或不是金融机构，
+    //        -3表示金融机构账户额度不足，
+    //        -4表示请求融资的机构账单额度不足
     function useReceipt(address to, uint amount) public returns(int8) {
         Company storage bank = companies[to]; // 引用
         Company storage company = companies[msg.sender]; // 引用
 
-        if (bank.field != 1) {
+        if (!company.registered) {
             return -1;
         }
 
-        if (bank.amount < amount) {
+        if (!bank.registered || bank.field != 1) {
             return -2;
         }
 
-        if (transferReceipt(to, amount) != 0) {
+        if (bank.amount < amount) {
             return -3;
+        }
+
+        if (transferReceipt(to, amount) != 0) {
+            return -4;
         }
 
         bank.amount -= amount;
@@ -149,12 +163,12 @@ contract SupplyChain {
     }
 
     // 功能四：应收账款支付结算上链
-    // 返回值：0表示成功，-1表示企业不是核心企业，
+    // 返回值：0表示成功，-1表示企业未注册或不是核心企业，
     //        -2表示企业额度不足
     function settleReceipt() public returns(int8) {
         Company storage company = companies[msg.sender]; // 引用
 
-        if (!company.kernel) {
+        if (!company.registered || !company.kernel) {
             return -1;
         }
 
@@ -203,18 +217,62 @@ contract SupplyChain {
     // 查询自己拥有的账单及账单总额
     // 返回值：第一个值：账单总额
     //        第二个值：账单索引数组
-    // function getReceipts() public view returns(uint, uint[] memory) {
-    //     uint amount;
-    //     uint[] memory indice;
+    function getReceipts() public view returns(uint, uint[] memory) {
+        uint amount = 0;
+        uint counter = 0;
         
-    //     for (uint i = 0; i < receipts.length; ++i) {
-    //         if (receipts[i].to == msg.sender) {
-    //             amount += receipts[i].amount;
-    //             indice.push(i);
-    //         }
-    //     }
+        for (uint i = 0; i < receipts.length; ++i) {
+            if (receipts[i].to == msg.sender && receipts[i].status == 0) {
+                amount += receipts[i].amount;
+                ++counter;
+            }
+        }
 
-    //     return (amount, indice);
-    // }
+        uint[] memory indice = new uint[](counter); // memory数组只能定长，没办法
+        counter = 0;
+        for (uint i = 0; i < receipts.length; ++i) {
+            if (receipts[i].to == msg.sender && receipts[i].status == 0) {
+                indice[counter++] = i;
+            }
+        }
+
+        return (amount, indice);
+    }
+
+    // 查询自己负债的账单及账单总额
+    // 返回值：第一个值：账单总额
+    //        第二个值：账单索引数组
+    function getDebts() public view returns(uint, uint[] memory) {
+        uint amount = 0;
+        uint counter = 0;
+        
+        for (uint i = 0; i < receipts.length; ++i) {
+            if (receipts[i].from == msg.sender && receipts[i].status == 0) {
+                amount += receipts[i].amount;
+                ++counter;
+            }
+        }
+
+        uint[] memory indice = new uint[](counter); // memory数组只能定长，没办法
+        counter = 0;
+        for (uint i = 0; i < receipts.length; ++i) {
+            if (receipts[i].from == msg.sender && receipts[i].status == 0) {
+                indice[counter++] = i;
+            }
+        }
+
+        return (amount, indice);
+    }
+
+    // 根据账单下标查询账单明细
+    // 返回值：Receipt结构体
+    function getReceiptDetail(uint index) public view returns (Receipt memory) {
+        require(index < receipts.length, "Receipt ID is not legal!");
+        
+        Receipt memory rcpt = receipts[index];
+        require(msg.sender == rcpt.to || msg.sender == rcpt.from, "You don't have access to this receipt.");
+
+        return rcpt;
+    }
 
 }

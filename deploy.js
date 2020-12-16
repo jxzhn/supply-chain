@@ -27,7 +27,7 @@ async function main() {
     let compiled = JSON.parse(fs.readFileSync(`compiled/${name}.json`))
 
     let account = await input('Which account are you gonna use? ');
-    let parameters = (await input('Parameters of contructor (split by space): ')).split(
+    let parameters = (await input('Parameters of constructor (split by space): ')).split(
         /\s+/).filter(item => Boolean(item)); // 去除空串
 
     console.log(`Trying to deploy contract ${name} ...`);
