@@ -4,6 +4,18 @@
 <head>
 <meta charset="utf-8">
 <title>Supply Chain Test Page</title>
+<!-- 新 Bootstrap4 核心 CSS 文件 -->
+<link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+ 
+<!-- jQuery文件。务必在bootstrap.min.js 之前引入 -->
+<script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+ 
+<!-- bootstrap.bundle.min.js 用于弹窗、提示、下拉菜单，包含了 popper.min.js -->
+<script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
+ 
+<!-- 最新的 Bootstrap4 核心 JavaScript 文件 -->
+<script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
 <script src="https://unpkg.com/vue/dist/vue.js"></script>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 </head>
@@ -12,51 +24,205 @@
 <style>
     /* 测试页面要什么自行车CSS */
 </style>
-<div id='app'>
-    <div>
-        <h1>Supply Chain Test Page</h1>
-        <p class='hello'>
-            This is a test page. <br />
-            Let's say the word —— Hello, world!<br />
-            Seems a little stupid though.
-        </p>
+<div id='app' style="overflow-x: hidden;">
+    <div class="row">
+        <div class="col-6 border-right" style="background-color: #06232ee8;">
+            <h1 align='center' style="color: white;">
+                供应链金融平台
+            </h1>
+        </div>
+        <!-- 用户 + amount -->
+        <div class='col-6' style="background-color: #06232ee8;">
+            <div class="row">
+                <div align='center' class="col-3 border-right" style="margin-top: 10px;">   
+                    <div class="btn btn-info btn-sm dropdown-toggle" type="button" id="userSelector" 
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        用户：{{ user }}
+                    </div>
+                    <div class="dropdown-menu" aria-labelledby="userSelector">
+                        <button class="dropdown-item" @click="changeUser('car')">car</button>
+                        <button class="dropdown-item" @click="changeUser('bank')">bank</button>
+                        <button class="dropdown-item" @click="changeUser('tyre')">tyre</button>
+                        <button class="dropdown-item" @click="changeUser('hub')">hub</button>
+                    </div>
+                </div> 
+                <div class="col" style="color: white; margin-top: 10px;">
+                    <div class='account'>
+                        <h5>余额: {{currentAccount.amount}}</h5>
+                    </div>
+                </div>
+            </div>
+        </div>    
     </div>
-    <div class='info'>
-        <h2>Supply Chain Interface Test</h2>
-        <div v-for='account in accounts' class='account'>
-            <h3 class='account-name'>{{account.name}}</h3>
-            <div class='account-info'>
-                <p>Amount: {{account.amount}}</p>
-                <p>Debt: {{account.debt}}</p>
-                <table border="1" class='account-info-table' v-show='account.debtList.length'>
-                    <tr>
-                        <td>from</td>
-                        <td>to</td>
-                        <td>amount</td>
-                    </tr>
-                    <tr v-for='item in account.debtList'>
-                      <td>{{item.from}}</td>
-                      <td>{{item.to}}</td>
-                      <td>{{item.amount}}</td>
-                    </tr>
-                </table>
-                <p>Receipt Amount: {{account.receiptAmount}}</p>
-                <table border="1" class='account-info-table' v-show='account.receiptList.length'>
-                    <tr>
-                        <td>from</td>
-                        <td>to</td>
-                        <td>amount</td>
-                    </tr>
-                    <tr v-for='item in account.receiptList'>
-                      <td>{{item.from}}</td>
-                      <td>{{item.to}}</td>
-                      <td>{{item.amount}}</td>
-                    </tr>
-                </table>
+
+    <div class="row ml-1 mr-1" style="margin-top: 15px;">
+        <!-- debt receipts -->
+        <div class="col-4 ml-2 mr-2" style="background-color: rgb(252, 241, 207);">
+            <div class='currentAccount'>
+                <!--展示当前账户的支票-->
+                <div class="card mt-1" style="background-color: rgb(224, 233, 225);">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h5>支票总额: {{ currentAccount.receiptAmount }}</h5>
+                            </div>    
+                        </div>
+                        <table align='center' class='account-info-table w-100 border-top border-bottom border-black'>
+                            <thead>
+                                <th>欠款方</th>
+                                <th>收款方</th>
+                                <th>金额</th>
+                            </thead>
+                        </table>
+                        <div style="overflow-y: scroll; height: 200px;">
+                            <table align='center' border="1" class='account-info-table w-100' v-show='currentAccount.receiptList.length'>
+                                <tr v-for='item in currentAccount.receiptList'>
+                                    <td>{{addToName[item.from]}}</td>
+                                    <td>{{addToName[item.to]}}</td>
+                                    <td>{{item.amount}}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!--展示当前账户的Debt-->
+                <div class="card mt-1 mb-1" style="background-color: rgb(219, 211, 211);">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h5>欠款总额: {{ currentAccount.debt }}</h5>
+                            </div>
+                        </div>
+                        <table align='center' class='account-info-table w-100 border-top border-bottom border-black'>
+                            <thead>
+                                <th width='80'>欠款方</th>
+                                <th width='80'>收款方</th>
+                                <th width='80'>金额</th>
+                            </thead>
+                        </table>
+                        <div style="overflow-y: scroll; height: 200px;">
+                            <table align='center' border="1" class='account-info-table w-100' v-show='currentAccount.debtList.length'>
+                                <tr v-for='item in currentAccount.debtList'>
+                                    <td width='80'>{{addToName[item.from]}}</td>
+                                    <td width='80'>{{addToName[item.to]}}</td>
+                                    <td width='80'>{{item.amount}}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>            
+            </div>
+        </div>
+
+        <!-- 功能 -->
+        <div class="col ml-2 mr-2" style="background-color: rgb(252, 241, 207);">
+            <div class="row justify-content-around" style="margin-top: 15px;">
+                <div class="col-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>开具支票</h5>
+                            <!-- 选择目标(buttom放在form里会导致每按一次都刷新页面) -->  
+                            <div class="btn btn-info btn-sm dropdown-toggle" type="button" id="buyFromChanger" 
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                收款企业：{{ buyFrom }}
+                            </div>
+                            <div class="dropdown-menu" aria-labelledby="butFromChanger">
+                                <button class="dropdown-item" @click="changeBuyFrom('car')">car</button>
+                                <button class="dropdown-item" @click="changeBuyFrom('bank')">bank</button>
+                                <button class="dropdown-item" @click="changeBuyFrom('tyre')">tyre</button>
+                                <button class="dropdown-item" @click="changeBuyFrom('hub')">hub</button>
+                            </div>
+                            <form>
+                                <!--输入金额 -->
+                                <div class="input-group mt-3" width="100">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">金额</span>
+                                    </div>
+                                    <input type="text" class="form-control" v-model="buyAmount" ><!--直接双向绑定全局变量-->
+                                </div>
+                                <!-- 确认按钮 调用函数 -->
+                                <button type="button" class="btn btn-success mt-3 float-right" @click="buy()">确定</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>转让支票</h5>
+                            <!-- 选择目标 -->  
+                            <div class="btn btn-info btn-sm dropdown-toggle" type="button" id="transferToChanger" 
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                转让目标：{{ transferTo }}
+                            </div>
+                            <div class="dropdown-menu" aria-labelledby="TransferToChanger">
+                                <button class="dropdown-item" @click="changeTransferTo('car')">car</button>
+                                <button class="dropdown-item" @click="changeTransferTo('bank')">bank</button>
+                                <button class="dropdown-item" @click="changeTransferTo('tyre')">tyre</button>
+                                <button class="dropdown-item" @click="changeTransferTo('hub')">hub</button>
+                            </div>
+                            <form>
+                                <!--输入金额 -->
+                                <div class="input-group mt-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">金额</span>
+                                    </div>
+                                    <input type="text" class="form-control" v-model="toAmount"><!--直接双向绑定全局变量-->
+                                </div>
+                                <!-- 确认按钮 调用函数 -->
+                                <button type="button" class="btn btn-success mt-3 float-right" @click="transfer()">确定</button>
+                            </form>
+                        </div>
+                    </div>       
+                </div>
+            </div>
+
+            <div class="row justify-content-around" style="margin-top: 15px;">
+                <div class="col-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>支票兑现</h5> 
+                            <!-- 选择目标 -->
+                            <div class="btn btn-info btn-sm dropdown-toggle mt-3" type="button" id="useToChanger" 
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                目标机构：{{ useTo }}
+                            </div>
+                            <div class="dropdown-menu" aria-labelledby="useToChanger">
+                                <button class="dropdown-item" @click="changeUseTo('car')">car</button>
+                                <button class="dropdown-item" @click="changeUseTo('bank')">bank</button>
+                                <button class="dropdown-item" @click="changeUseTo('tyre')">tyre</button>
+                                <button class="dropdown-item" @click="changeUseTo('hub')">hub</button>
+                            </div> 
+                            <form>
+                                <!--输入金额 -->
+                                <div class="input-group mt-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">金额</span>
+                                    </div>
+                                    <input type="text" class="form-control" v-model="useAmount"><!--直接双向绑定全局变量-->
+                                </div>
+                                <!-- 确认按钮 调用函数 -->
+                                <button type="button" class="btn btn-success mt-3 float-right" @click="useReceipt()">确定</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">    
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>结算欠款</h5>
+                            <button type="button" class="btn btn-success mt-3 float-right" @click="clearDebt()">确定</button>
+                        </div>
+                    </div>
+                </div>     
             </div>
         </div>
     </div>
 </div>
+
+
+
+
 <script>
     async function contractMethod(account, method, parameters) {
         try {
@@ -87,6 +253,23 @@
         el: '#app',
         data: {
             accounts: [],
+            user: 'car',
+            currentAccount: {},
+            buyFrom: '',
+            buyAmount: 0,
+            transferTo: '',
+            toAmount: 0,
+            useTo: '',
+            useAmount: 0,
+            // 原来地址用的是字符串啊……
+            nameToAdd: {'car': '0x19b267f1c7a491ea721b155d51fd447c50bed160',
+                        'bank': '0x38de065475130a8629ee502ef732c9547f67f713',
+                        'tyre': '0x7bced38f4dc58648417b9784e65dcc8564cf899b',
+                        'hub': '0xa75ac687c81088b567ea399679efa29ce4991907'},
+            addToName: {'0x19b267f1c7a491ea721b155d51fd447c50bed160': 'car',
+                        '0x38de065475130a8629ee502ef732c9547f67f713': 'bank',
+                        '0x7bced38f4dc58648417b9784e65dcc8564cf899b': 'tyre',
+                        '0xa75ac687c81088b567ea399679efa29ce4991907': 'hub'},
         },
         async mounted() {
             for (let name of ['car', 'bank', 'tyre', 'hub']) {
@@ -116,9 +299,169 @@
                 }
                 this.accounts.push(account);
             }
+            this.currentAccount = this.accounts[0]
         },
         methods: {
-
+            changeUser(newUser) {
+                this.user = newUser;
+                for(let idx = 0; idx < this.accounts.length; idx++) {
+                    if(this.accounts[idx].name == this.user){
+                        this.currentAccount = this.accounts[idx];
+                        break;
+                    }
+                }
+                this.buyFrom = '';
+                this.buyAmount = 0;
+                this.transferTo = '';
+                this.toAmount = 0;
+                this.useTo = '';
+                this.useAmount = 0;
+            },
+            changeBuyFrom(newBF) {
+                this.buyFrom = newBF;
+            },
+            changeTransferTo(newTF) {
+                this.transferTo = newTF;
+            },
+            changeUseTo(newUT) {
+                this.useTo = newUT;
+            },
+            async buy() {//生成账单
+                if(this.buyFrom == "") {
+                    alert("收款企业不能为空！");
+                    console.log("Fail!");
+                }
+                else {
+                    let result = await contractMethod(this.user, 'createReceipt', [this.nameToAdd[this.buyFrom], this.buyAmount]);
+                    if(result == 0)
+                    {
+                        alert("账单生成成功！")
+                        console.log("success!");
+                        await this.refresh();
+                        this.changeUser(this.user);
+                    }else if(result == -1)
+                    {
+                        alert("公司未注册，生成账单失败！")
+                        console.log("Fail!");
+                    }else if(result == -2)
+                    {
+                        alert("当前公司不是核心企业，无法发放账单！")
+                        console.log("Fail!");
+                    }
+                }
+                //置0
+                this.buyFrom = '';
+                this.buyAmount = 0;
+            },
+            async transfer() {//拆分转移账单
+                if(this.transferTo == "") {
+                    alert("转让目标不能为空！");
+                    console.log("Fail!");
+                }
+                else {
+                    let result = await contractMethod(this.user, 'transferReceipt', [this.nameToAdd[this.transferTo], this.toAmount]);
+                    if(result == 0)
+                    {
+                        alert("账单转让成功！")
+                        console.log("success!");
+                        await this.refresh();
+                        this.changeUser(this.user);
+                    }else if(result == -1)
+                    {
+                        alert("公司未注册，转让失败！")
+                        console.log("Fail!");
+                    }else if(result == -2)
+                    {
+                        alert("可转让金额不足，转让失败！")
+                        console.log("Fail!");
+                    }
+                    this.transferTo = '';
+                    this.buyAmount = 0;
+                }
+            },
+            async useReceipt() {//融资
+                if(this.useTo == "") {
+                    alert("目标机构不能为空！");
+                    console.log("Fail!");
+                }
+                else {
+                    let result = await contractMethod(this.user, 'useReceipt', [this.nameToAdd[this.useTo], this.useAmount]);
+                    if(result == 0)
+                    {
+                        alert("融资成功！")
+                        console.log("success!");
+                        await this.refresh();
+                        this.changeUser(this.user);
+                    }else if(result == -1)
+                    {
+                        alert("公司未注册，融资失败！")
+                        console.log("Fail!");
+                    }else if(result == -2)
+                    {
+                        alert("融资对象不是金融机构，融资失败！")
+                        console.log("Fail!");
+                    }else if(result == -3)
+                    {
+                        alert("金融机构账户额度不足，融资失败！")
+                        console.log("Fail!");
+                    }else if(result == -4)
+                    {
+                        alert("融资支票额度不足，融资失败！")
+                        console.log("Fail!");
+                    }
+                    this.useTo = '';
+                    this.useAmount = 0;
+                }
+            },
+            async clearDebt() {//清算
+                let result = await contractMethod(this.user, 'settleReceipt', []);
+                if(result == 0)
+                {
+                    alert("清算成功！")
+                    console.log("success!");
+                    await this.refresh();
+                    this.changeUser(this.user);
+                }
+                else if(result == -1)
+                {
+                    alert("当前企业不符合清算条件，清算失败！")
+                    console.log("Fail!");
+                }else if(result == -2)
+                {
+                    alert("当前企业余额不足以清算，清算失败！")
+                    console.log("Fail!");
+                }
+            },
+            async refresh() {// 更新数据
+                this.accounts = [];
+                for (let name of ['car', 'bank', 'tyre', 'hub']) {// 重新取一下数据
+                    let account = {name: name};
+                    // 查询余额
+                    try {
+                        let [status, amount] = await contractMethod(name, 'getAmount', []);
+                        account.amount = amount;
+                    } catch (err) {
+                        console.log(err);
+                    }
+                    // 查询debt
+                    try {
+                        let [debt, indice] = await contractMethod(name, 'getDebts', []);
+                        account.debt = debt;
+                        account.debtList = await getReceiptsDetail(name, indice);
+                    } catch (err) {
+                        console.log(err);
+                    }
+                    // 查询receipt amount
+                    try {
+                        let [receiptAmount, indice] = await contractMethod(name, 'getReceipts', []);
+                        account.receiptAmount = receiptAmount;
+                        account.receiptList = await getReceiptsDetail(name, indice);
+                    } catch (err) {
+                        console.log(err);
+                    }
+                    this.accounts.push(account);
+                }
+            },
         }
     })
 </script>
